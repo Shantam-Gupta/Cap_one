@@ -21,7 +21,13 @@ class TaskValidationAgent:
         plan = context.plan or {}
 
         # 1. Deterministic Deliverable Check
-        expected_outputs = plan.get("expected_outputs", [])
+        if hasattr(plan, "expected_outputs"):
+            expected_outputs = plan.expected_outputs
+        elif isinstance(plan, dict):
+            expected_outputs = plan.get("expected_outputs", [])
+        else:
+            expected_outputs = []
+            
         if not expected_outputs:
             # Infer standard deliverables from prompt
             prompt_l = context.prompt.lower()
