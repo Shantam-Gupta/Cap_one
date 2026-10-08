@@ -60,6 +60,8 @@ class GeminiProvider(BaseLLMProvider):
                 try:
                     resp = await client.post(url, json=body)
                     if resp.status_code in (503, 429):
+                        if attempt == 2:
+                            raise RuntimeError(f"Rate limited or unavailable after 3 attempts. Status: {resp.status_code}")
                         import asyncio
                         await asyncio.sleep(2 * (attempt + 1))
                         continue
@@ -80,6 +82,7 @@ class GeminiProvider(BaseLLMProvider):
                     await asyncio.sleep(2 * (attempt + 1))
             if last_err:
                 raise last_err
+            raise RuntimeError("Failed to obtain response from Gemini API.")
 
     async def complete_structured(
         self,

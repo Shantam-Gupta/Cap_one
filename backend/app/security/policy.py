@@ -3,7 +3,9 @@ import ast
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+# pyrefly: ignore [missing-import]
 from app.schemas.enums import NetworkPolicy
+# pyrefly: ignore [missing-import]
 from app.security.rules import FORBIDDEN_MODULES, FORBIDDEN_PATHS, SUSPICIOUS_CALLS
 
 

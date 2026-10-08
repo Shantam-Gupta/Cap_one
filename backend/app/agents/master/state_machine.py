@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Dict, List, Optional, Set
 
+# pyrefly: ignore [missing-import]
 from app.schemas.enums import TaskState
 
 
@@ -55,10 +56,12 @@ class TaskStateMachine:
         },
         TaskState.PLAN_READY: {
             TaskState.GENERATING,
+            TaskState.COMPLETED,
             TaskState.CANCELLED,
         },
         TaskState.GENERATING: {
             TaskState.SECURITY_CHECK,
+            TaskState.COMPLETED,
             TaskState.FAILED,
             TaskState.CANCELLED,
         },

@@ -82,6 +82,7 @@ class TaskContext:
     max_retries: int = 3
     current_state: TaskState = TaskState.RECEIVED
     current_attempt: int = 1
+    is_coding_task: bool = True
     files_available: List[str] = field(default_factory=list)
     plan: Optional[Dict[str, Any]] = None
     code_versions: List[CodeVersion] = field(default_factory=list)

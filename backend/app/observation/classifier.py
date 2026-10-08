@@ -2,6 +2,7 @@
 import re
 from typing import Optional, Tuple
 
+# pyrefly: ignore [missing-import]
 from app.schemas.enums import ErrorType
 
 

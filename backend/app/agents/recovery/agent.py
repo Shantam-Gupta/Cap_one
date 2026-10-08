@@ -7,6 +7,7 @@ from app.agents.recovery.schemas import RecoveryDecision
 from app.llm.base import BaseLLMProvider
 from app.llm.factory import get_llm_provider
 from app.schemas.enums import ErrorType
+from app.core.config import settings
 
 
 class RecoveryAgent:
@@ -17,6 +18,28 @@ class RecoveryAgent:
 
     def __init__(self, llm_provider: Optional[BaseLLMProvider] = None):
         self.llm = llm_provider or get_llm_provider()
+        self.recovery_log_path = settings.WORKSPACE_DIR / "recovery_tasks.json"
+
+    def save_recovery_task(self, task_data: dict):
+        """Saves a copy of the validated recovery task to a separate file."""
+        import json
+        import os
+        
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(self.recovery_log_path), exist_ok=True)
+        
+        history = []
+        if os.path.exists(self.recovery_log_path):
+            try:
+                with open(self.recovery_log_path, "r") as f:
+                    history = json.load(f)
+            except json.JSONDecodeError:
+                history = []
+                
+        history.append(task_data)
+        
+        with open(self.recovery_log_path, "w") as f:
+            json.dump(history, f, indent=2)
 
     async def diagnose_and_repair(self, context: TaskContext) -> RecoveryDecision:
         latest_code_ver = context.get_latest_code()
@@ -72,16 +95,19 @@ class RecoveryAgent:
         if is_repeated:
             user_content["CRITICAL_INSTRUCTION"] = (
                 f"REPEATED FAILURE DETECTED: The last {context.consecutive_identical_errors} attempts failed "
-                f"with the identical error ({latest_error.error_type.value}). "
+                f"with the identical error ({latest_error.error_type.value if latest_error else 'UNKNOWN_ERROR'}). "
                 "DO NOT repeat the previous repair. Implement an alternative strategy or request replanning."
             )
 
-        resp = await self.llm.complete_structured(
-            prompt=json.dumps(user_content, indent=2),
-            system_prompt=system_prompt,
-        )
-
-        data = resp.structured or {}
+        try:
+            resp = await self.llm.complete_structured(
+                prompt=json.dumps(user_content, indent=2),
+                system_prompt=system_prompt,
+            )
+            data = resp.structured or {}
+        except Exception as e:
+            print(f"Recovery agent llm error: {e}")
+            data = {}
         if "modified_code" not in data or not data["modified_code"]:
             # Fallback code
             data["modified_code"] = latest_code_ver.source_code if latest_code_ver else ""
